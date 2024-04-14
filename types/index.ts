@@ -25,7 +25,7 @@ export type CreateEventParams = {
 		imageUrl: string
 		startDateTime: Date
 		endDateTime: Date
-		categoryId: string
+		categoryId?: string
 		price: string
 		isFree: boolean
 		url: string
