@@ -5,9 +5,9 @@ import { auth } from '@clerk/nextjs'
 const CreateEvent = () => {
 	const { sessionClaims } = auth();
 
-	const userId = sessionClaims?.userId as string
+	const { userId }: any = sessionClaims?.userId
 
-	// console.log(sessionClaims)
+	// console.log(userId)
 
 	return (
 		<>
