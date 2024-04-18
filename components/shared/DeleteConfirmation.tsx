@@ -46,7 +46,9 @@ const DeleteConfirmation = ({ eventId }: { eventId: string }) => {
 								await deleteEvent({ eventId, path: pathname })
 							})
 						}
-					>Delete</AlertDialogAction>
+					>
+						{isPending ? 'Deleting...' : 'Delete'}
+					</AlertDialogAction>
 				</AlertDialogFooter>
 			</AlertDialogContent>
 		</AlertDialog>
