@@ -7,7 +7,7 @@ import User from "@/lib/database/models/user.models";
 import Event from "@/lib/database/models/event.models";
 import Category from "@/lib/database/models/category.models";
 
-import { CreateEventParams, DeleteEventParams, GetAllEventsParams } from "@/types";
+import { CreateEventParams, DeleteEventParams, GetAllEventsParams, UpdateEventParams } from "@/types";
 import { handleError } from "../utils";
 
 const populateEvent = (query: any) => {
@@ -33,6 +33,29 @@ export async function createEvent({ userId, event, path }: CreateEventParams) {
   }
 }
 
+// UPDATE EVENT
+export async function updateEvent({ userId, event, path }: UpdateEventParams) {
+  try {
+    await connectToDatabase()
+    
+    const eventToUpdate = await Event.findById(event._id)
+    if (!eventToUpdate || eventToUpdate.organizer.toHexString() !== userId) {
+      throw new Error('Unauthorized or event not found')
+    }
+
+    const updateEvent = await Event.findByIdAndUpdate(
+      event._id,
+      { ...event, category: event.categoryId },
+      { new: true }
+    )
+    revalidatePath(path)
+
+    return JSON.parse(JSON.stringify(updateEvent))
+  } catch (error) {
+    handleError(error)
+  }
+}
+
 // GET ONE EVENT BY ID
 export async function getEventById(eventId: string) {
   try {
@@ -47,8 +70,6 @@ export async function getEventById(eventId: string) {
     handleError(error)
   }
 }
-
-// DELETE EVENT
 
 // DELETE EVENT
 export const deleteEvent = async ({ eventId, path}: DeleteEventParams) => {
