@@ -21,7 +21,6 @@ import { deleteEvent } from '@/lib/actions/event.actions'
 const DeleteConfirmation = ({ eventId }: { eventId: string }) => {
 	const pathname = usePathname()
 	let [isPending, startTransition] = useTransition()
-	console.log(pathname)
 
 	return (
 		<AlertDialog>
