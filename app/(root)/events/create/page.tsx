@@ -1,13 +1,12 @@
 import React from 'react'
 import EventForm from '@/components/shared/EventForm'
-import { auth } from '@clerk/nextjs'
+import { auth, RedirectToSignIn } from '@clerk/nextjs'
 
 const CreateEvent = () => {
-	const { sessionClaims } = auth();
+	const { sessionClaims } = auth()
+	const { userId }: any = sessionClaims?.userId ?? {};
+	if(!userId) return <RedirectToSignIn afterSignInUrl='/events/create' />
 
-	const { userId }: any = sessionClaims?.userId
-
-	// console.log(userId)
 
 	return (
 		<>
