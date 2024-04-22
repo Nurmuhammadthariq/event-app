@@ -7,7 +7,14 @@ import User from "@/lib/database/models/user.models";
 import Event from "@/lib/database/models/event.models";
 import Category from "@/lib/database/models/category.models";
 
-import { CreateEventParams, DeleteEventParams, GetAllEventsParams, UpdateEventParams } from "@/types";
+import { 
+  CreateEventParams, 
+  DeleteEventParams, 
+  GetAllEventsParams, 
+  GetEventsByUserParams, 
+  GetRelatedEventsByCategoryParams, 
+  UpdateEventParams 
+} from "@/types";
 import { handleError } from "../utils";
 
 const populateEvent = (query: any) => {
@@ -109,4 +116,60 @@ export async function getAllEvents({ query, limit = 6, page, category }: GetAllE
   } catch (error) {
     handleError(error)
   }
+}
+
+export async function getEventsByUser({ userId, limit = 6, page }: GetEventsByUserParams) {
+  try {
+    await connectToDatabase()
+
+    const conditions = { organizer: userId }
+    const skipAmount = (Number(page) - 1) * limit
+
+    const eventsQuery = Event.find(conditions)
+      .sort({ createdAt: 'desc' })
+      .skip(skipAmount)
+      .limit(limit)
+    
+    const events = await populateEvent(eventsQuery)
+    const eventsCount = await Event.countDocuments(conditions)
+
+    return {
+      data: JSON.parse(JSON.stringify(events)),
+      totalPages: Math.ceil(eventsCount / limit),
+    }
+  } catch (error) {
+    handleError(error)
+  }
+}
+
+export async function getRelatedEventsByCategory({ 
+  categoryId,
+  eventId,
+  page,
+  limit = 3
+ }: GetRelatedEventsByCategoryParams) {
+  
+  try {
+    await connectToDatabase()
+
+    const skipAmount = (Number(page) - 1) * limit
+    const conditions = { $and: [{ category: categoryId }, { _id: { $ne: eventId } }] }
+
+    const eventsQuery = Event.find(conditions)
+      .sort({ createdAt: 'desc' })
+      .skip(skipAmount)
+      .limit(limit)
+    
+    const events = await populateEvent(eventsQuery)
+    const eventsCount = await Event.countDocuments(conditions)
+
+    return {
+      data: JSON.parse(JSON.stringify(events)),
+      totalPages: Math.ceil(eventsCount / limit),
+    }
+
+  } catch (error) {
+    handleError(error)
+  }
+
 }
