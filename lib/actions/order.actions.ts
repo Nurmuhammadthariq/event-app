@@ -10,11 +10,19 @@ import User from "../database/models/user.models"
 import { ObjectId } from "mongoose"
 
 export async function createOrder(order: CreateOrderParams) {
-	try {
-		await connectToDatabase()
-	} catch (error) {
-		handleError(error)
-	}
+  try {
+    await connectToDatabase()
+
+    const newOrder = await Order.create({
+      ...order,
+      event: order.eventId,
+      buyer: order.buyerId
+    })
+
+    return JSON.parse(JSON.stringify(newOrder))
+  } catch (error) {
+    handleError(error)
+  }
 }
 
 export const checkoutOrder = async (order: CheckoutOrderParams) => {
@@ -23,7 +31,7 @@ export const checkoutOrder = async (order: CheckoutOrderParams) => {
   const price = order.isFree ? 0 : Number(order.price) * 100
 
   try {
-    
+
     const session = await stripe.checkout.sessions.create({
       line_items: [
         {
