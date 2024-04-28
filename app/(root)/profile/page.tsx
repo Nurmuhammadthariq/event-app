@@ -7,15 +7,18 @@ import { auth } from '@clerk/nextjs'
 import { getEventsByUser } from '@/lib/actions/event.actions'
 import { getOrdersByUser } from '@/lib/actions/order.actions'
 import { SearchParamProps } from '@/types'
+import { IOrder } from '@/lib/database/models/order.models'
 
 const ProfilePage = async ({ searchParams }: SearchParamProps) => {
 	const { sessionClaims } = auth()
 	const { userId }: any = sessionClaims?.userId ?? {};
 
+	const ordersPage = Number(searchParams?.ordersPage) || 1
 	const eventsPage = Number(searchParams?.eventsPage) || 1
+
 	const orders = await getOrdersByUser({ userId, page: eventsPage })
 
-
+	const orderedEvents = orders?.data.map((order: IOrder) => order.event) || []
 	const organizedEvents = await getEventsByUser({ userId, page: eventsPage })
 
 	return (
@@ -33,14 +36,14 @@ const ProfilePage = async ({ searchParams }: SearchParamProps) => {
 
 			<section className='wrapper my-8'>
 				<Collection
-					data={[]}
+					data={orderedEvents}
 					emptyTitle="No event tickets purchased yet"
 					emptyStateSubText="No Worries - plenty of exciting events to explore!"
 					collectionType="My_Tickets"
 					limit={3}
-					page={1}
+					page={ordersPage}
 					urlParamName='ordersPage'
-					totalPages={2}
+					totalPages={orders?.totalPages}
 				/>
 			</section>
 

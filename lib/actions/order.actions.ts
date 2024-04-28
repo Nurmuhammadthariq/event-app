@@ -1,13 +1,13 @@
 "use server"
 
 import Stripe from 'stripe'
-import { GetOrdersByUserParams, CreateOrderParams, CheckoutOrderParams } from "@/types"
+import { GetOrdersByUserParams, CreateOrderParams, CheckoutOrderParams, GetOrdersByEventParams } from "@/types"
 import { redirect } from "next/navigation"
 import { handleError } from "../utils"
 import { connectToDatabase } from "../database"
 import Order from "../database/models/order.models"
 import User from "../database/models/user.models"
-import { ObjectId } from "mongoose"
+import { ObjectId } from "mongodb"
 
 export async function createOrder(order: CreateOrderParams) {
 	try {
@@ -57,6 +57,61 @@ export const checkoutOrder = async (order: CheckoutOrderParams) => {
 
   } catch (error) {
     throw error
+  }
+}
+
+export async function getOrdersByEvent({ searchString, eventId }: GetOrdersByEventParams) {
+  try {
+    await connectToDatabase()
+
+    if (!eventId) throw new Error('Eveny ID is required')
+    const eventObjectId = new ObjectId(eventId)
+
+    const orders = await Order.aggregate([
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'buyer',
+          foreignField: '_id',
+          as: 'buyer',
+        }
+      },
+      {
+        $unwind: '$buyer'
+      },
+      {
+        $lookup: {
+          from: 'events',
+          localField: 'event',
+          foreignField: '_id',
+          as: 'event',
+        }
+      },
+      {
+        $unwind: '$event'
+      },
+      {
+        $project: {
+          _id: 1,
+          totalAmount: 1,
+          createdAt: 1,
+          eventTitle: '$event.title',
+          eventId: '$event._id',
+          buyer: {
+            $concat: ['$buyer.firstName', ' ', '$buyer.lastName'],
+          },
+        }
+      },
+      {
+        $match: {
+          $and: [{ eventId: eventObjectId }, { buyer: { $regex: RegExp(searchString, 'i') } }],
+        }
+      }
+    ])
+
+    return JSON.parse(JSON.stringify(orders))
+  } catch (error) {
+    handleError(error)
   }
 }
 
