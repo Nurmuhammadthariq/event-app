@@ -17,6 +17,10 @@ import {
 } from "@/types";
 import { handleError } from "../utils";
 
+const getCategoryByName = async (name: string) => {
+  return await Category.findOne({ name: { $regex: name, $options: 'i' } })
+}
+
 const populateEvent = (query: any) => {
   return query
     .populate({ path: 'organizer', model: User, select: '_id firstName lastName' })
@@ -97,12 +101,16 @@ export async function getAllEvents({ query, limit = 6, page, category }: GetAllE
   try {
     await connectToDatabase()
 
-    const conditions = {}
+    const titleCondition = query ? { title: { $regex: query, $options: 'i' } } : {}
+    const categoryCondition = category ? await getCategoryByName(category) : null
+    const conditions = {
+      $and: [titleCondition, categoryCondition ? { category: categoryCondition._id } : {}],
+    }
 
     const skipAmount = (Number(page) - 1) * limit
     const eventsQuery = Event.find(conditions)
       .sort({ createdAt: 'desc' })
-      .skip(0)
+      .skip(skipAmount)
       .limit(limit)
     
     const events = await populateEvent(eventsQuery)
